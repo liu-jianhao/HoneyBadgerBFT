@@ -9,24 +9,11 @@ import (
 	"time"
 )
 
-type Config struct {
-	// 节点数
-	N int
-	// 坏节点数
-	F int
-	// 节点标识
-	ID uint64
-	// 所有节点的标识
-	Nodes []uint64
-	// 每个epoch提交的最大交易数量
-	BatchSize int
-}
-
 type HoneyBadger struct {
 	Config
 	// epoch -> ACS
 	acsInstances map[uint64]*ACS
-	// 存交易的buffer
+	// 存事务的buffer
 	transactionBuffer *transactionBuffer
 	// 当前epoch
 	epoch uint64
