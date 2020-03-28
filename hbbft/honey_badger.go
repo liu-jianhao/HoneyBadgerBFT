@@ -11,16 +11,18 @@ import (
 
 type HoneyBadger struct {
 	Config
-	// epoch -> ACS
-	acsInstances map[uint64]*ACS
-	// 存事务的buffer
-	transactionBuffer *transactionBuffer
 	// 当前epoch
 	epoch uint64
+	// epoch -> ACS
+	acsInstances map[uint64]*ACS
+
+	// 存事务的buffer
+	transactionBuffer *transactionBuffer
 
 	lock sync.Mutex
-	// epoch -> []Transaction，在epoch中提交的交易
+	// epoch -> []Transaction，在epoch中提交的事务
 	outputs map[uint64][]Transaction
+
 	// 需要在处理之后广播的消息
 	messageList *messageList
 }
@@ -35,7 +37,7 @@ func NewHoneyBadger(cfg Config) *HoneyBadger {
 	}
 }
 
-func (hb *HoneyBadger) Messages() []Message {
+func (hb *HoneyBadger) GetMessage() []Message {
 	return hb.messageList.getMessages()
 }
 
@@ -44,7 +46,7 @@ func (hb *HoneyBadger) AddTransaction(tx Transaction) {
 	hb.transactionBuffer.add(tx)
 }
 
-// 处理给定`epoch`下的`ACSMessage`
+// 处理给定epoch下的ACSMessage
 func (hb *HoneyBadger) HandleMessage(sid, epoch uint64, msg *ACSMessage) error {
 	acs, ok := hb.acsInstances[epoch]
 	if !ok {
@@ -116,7 +118,7 @@ func (hb *HoneyBadger) Start() error {
 	return hb.propose()
 }
 
-// 返回每次`epoch`已经提交的交易
+// 返回每次epoch已经提交的交易
 func (hb *HoneyBadger) Outputs() map[uint64][]Transaction {
 	hb.lock.Lock()
 	defer hb.lock.Unlock()
@@ -126,7 +128,7 @@ func (hb *HoneyBadger) Outputs() map[uint64][]Transaction {
 	return out
 }
 
-// 在当前`epoch`提出一批
+// 在当前epoch提出一批
 func (hb *HoneyBadger) propose() error {
 	if hb.transactionBuffer.len() == 0 {
 		time.Sleep(2 * time.Second)

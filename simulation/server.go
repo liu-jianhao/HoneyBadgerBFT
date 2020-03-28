@@ -11,14 +11,13 @@ import (
 type Server struct {
 	id             uint64
 	hb             *hbbft.HoneyBadger
-	transport      *hbbft.Transport
 	lock           sync.RWMutex
 	transactionMap map[string]*Transaction
 	totalCommit    int
 	start          time.Time
 }
 
-func newServer(id uint64, tr *hbbft.Transport, nodes []uint64) *Server {
+func newServer(id uint64, nodes []uint64) *Server {
 	hb := hbbft.NewHoneyBadger(hbbft.Config{
 		N:         len(nodes),
 		ID:        id,
@@ -27,7 +26,6 @@ func newServer(id uint64, tr *hbbft.Transport, nodes []uint64) *Server {
 	})
 	return &Server{
 		id:             id,
-		transport:      tr,
 		hb:             hb,
 		transactionMap: make(map[string]*Transaction),
 		start:          time.Now(),
@@ -41,13 +39,6 @@ func (s *Server) addTransactions(txx ...*Transaction) {
 		s.lock.Unlock()
 
 		s.hb.AddTransaction(tx)
-		go func() {
-			for i := 0; i < len(s.hb.Nodes); i++ {
-				if uint64(i) != s.hb.ID {
-					relayCh <- tx
-				}
-			}
-		}()
 	}
 }
 
@@ -96,28 +87,17 @@ func (s *Server) commitLoop() {
 
 // 1. 不断产生事务 2. 不断提交事务
 func (s *Server) run() {
-	go s.addTransactionLoop()
-	go s.commitLoop()
+
 }
 
 func makeNetwork(n int) []*Server {
-	transports := make([]*hbbft.Transport, n)
 	nodes := make([]*Server, n)
 	for i := 0; i < n; i++ {
-		transports[i] = hbbft.NewTransport(uint64(i))
 		ids := make([]uint64, n)
 		for i := 0; i < n; i++ {
 			ids[i] = uint64(i)
 		}
-		nodes[i] = newServer(uint64(i), transports[i], ids)
-	}
-	for i := 0; i < len(transports); i++ {
-		for ii := 0; ii < len(transports); ii++ {
-			if ii == i {
-				continue
-			}
-			transports[i].Connect(transports[ii].Addr(), transports[ii])
-		}
+		nodes[i] = newServer(uint64(i), ids)
 	}
 	return nodes
 }

@@ -18,7 +18,7 @@ type ACS struct {
 	output map[uint64][]byte
 	// 需要被广播的消息
 	messageList *messageList
-	// ACS是否应输出
+	// ACS是否已经得出结果
 	decided bool
 
 	// 内部使用的通道
@@ -246,8 +246,8 @@ func (a *ACS) processAgreement(pid uint64, fun func(bba *BBA) error) error {
 		}
 
 		bbaIds := make([]uint64, 0)
-		for id, ok := range a.bbaResults {
-			if ok {
+		for id, value := range a.bbaResults {
+			if value {
 				bbaIds = append(bbaIds, id)
 			}
 		}

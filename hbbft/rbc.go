@@ -259,7 +259,10 @@ func (r *RBC) handleEchoRequest(senderID uint64, req *EchoRequest) error {
 	}
 
 	r.recvEchos[senderID] = req
-	if r.readySent || r.countEchos(req.RootHash) < r.N-r.F {
+	if r.countEchos(req.RootHash) < r.N-r.F {
+		return nil
+	}
+	if r.readySent {
 		return r.decodeValue(req.RootHash)
 	}
 

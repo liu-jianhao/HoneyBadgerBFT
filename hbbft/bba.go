@@ -8,7 +8,7 @@ import (
 type BBA struct {
 	Config
 	// 当前epoch
-	epoch uint32
+	epoch uint64
 	// 我们在这次epoch接受的BinaryValue
 	binaryValues []bool
 	// 这个实例发送的二进制值
@@ -101,9 +101,9 @@ func (b *BBA) HandleMessage(senderID uint64, msg *AgreementMessage) error {
 	return <-t.err
 }
 
-// 返回是否已接受
+// 返回是否已经接受值
 func (b *BBA) NotProvidedInput() bool {
-	return b.epoch == 0 && b.estimated == nil
+	return b.estimated == nil
 }
 
 // 返回output，并清空
@@ -153,17 +153,17 @@ func (b *BBA) inputValue(val bool) error {
 	b.estimated = val
 	b.sentBinaryValue = append(b.sentBinaryValue, val)
 	// 广播bval
-	b.addMessage(&AgreementMessage{int(b.epoch), &BinaryValueRequest{val}})
+	b.addMessage(&AgreementMessage{b.epoch, &BinaryValueRequest{val}})
 	return b.handleBinaryValueRequest(b.ID, val)
 }
 
 // 拒绝老epoch、新epoch加进delayedMessage、根据消息类型分别处理
 func (b *BBA) handleMessage(senderID uint64, msg *AgreementMessage) error {
-	if b.done || msg.Epoch < int(b.epoch) {
+	if b.done || msg.Epoch < b.epoch {
 		return nil
 	}
 
-	if msg.Epoch > int(b.epoch) {
+	if msg.Epoch > b.epoch {
 		b.delayedMessages = append(b.delayedMessages, delayedMessage{senderID, msg})
 		return nil
 	}
@@ -191,7 +191,7 @@ func (b *BBA) handleBinaryValueRequest(senderID uint64, val bool) error {
 		b.binaryValues = append(b.binaryValues, val)
 		if isEmpty {
 			// 广播aux(r)
-			b.addMessage(&AgreementMessage{int(b.epoch), &AuxRequest{val}})
+			b.addMessage(&AgreementMessage{b.epoch, &AuxRequest{val}})
 			_ = b.handleAuxRequest(b.ID, val)
 		}
 		return nil
@@ -200,7 +200,7 @@ func (b *BBA) handleBinaryValueRequest(senderID uint64, val bool) error {
 	// 接收到从f+1个节点发出的bval(b)，如果此节点没有广播过bval(b)，那么广播bval(b)
 	if length == b.F+1 && !b.hasSentBinaryValue(val) {
 		b.sentBinaryValue = append(b.sentBinaryValue, val)
-		b.addMessage(&AgreementMessage{int(b.epoch), &BinaryValueRequest{val}})
+		b.addMessage(&AgreementMessage{b.epoch, &BinaryValueRequest{val}})
 		return b.handleBinaryValueRequest(b.ID, val)
 	}
 	return nil
@@ -250,7 +250,7 @@ func (b *BBA) outputAgreement() {
 
 	est := b.estimated.(bool)
 	b.sentBinaryValue = append(b.sentBinaryValue, est)
-	b.addMessage(&AgreementMessage{int(b.epoch), &BinaryValueRequest{est}})
+	b.addMessage(&AgreementMessage{b.epoch, &BinaryValueRequest{est}})
 
 	for _, que := range b.delayedMessages {
 		_ = b.handleMessage(que.sid, que.msg)

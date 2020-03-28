@@ -26,6 +26,6 @@ type BroadcastMessage struct {
 
 // bba
 type AgreementMessage struct {
-	Epoch   int
+	Epoch   uint64
 	Message interface{}
 }
