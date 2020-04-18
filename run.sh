@@ -1,1 +1,1 @@
-go run simulation/main.go simulation/server.go simulation/transaction.go
+go run test/main.go test/server.go test/transaction.go
