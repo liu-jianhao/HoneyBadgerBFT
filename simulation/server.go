@@ -20,6 +20,7 @@ type Server struct {
 func newServer(id uint64, nodes []uint64) *Server {
 	hb := hbbft.NewHoneyBadger(hbbft.Config{
 		N:         len(nodes),
+		F:         len(nodes) / 4,
 		ID:        id,
 		Nodes:     nodes,
 		BatchSize: batchSize,
@@ -43,15 +44,15 @@ func (s *Server) addTransactions(txx ...*Transaction) {
 }
 
 func (s *Server) addTransactionLoop() {
-	timer := time.NewTicker(1 * time.Second)
+	timer := time.NewTicker(1000 * time.Millisecond)
 	for {
 		<-timer.C
-		s.addTransactions(MakeTransactions(1000)...)
+		s.addTransactions(MakeTransactions(1024)...)
 	}
 }
 
 func (s *Server) commitLoop() {
-	timer := time.NewTicker(time.Second * 2)
+	timer := time.NewTicker(time.Second * 5)
 	n := 0
 	for {
 		select {
@@ -73,7 +74,7 @@ func (s *Server) commitLoop() {
 			if s.id == 1 {
 				fmt.Println("")
 				fmt.Println("*************************************************")
-				fmt.Printf("server %d\n", s.id)
+				// fmt.Printf("server %d\n", s.id)
 				fmt.Printf("commited %d transactions over %v\n", s.totalCommit, delta)
 				fmt.Printf("throughput %d TX/s\n", s.totalCommit/int(delta.Seconds()))
 				// fmt.Printf("epoch %d\n", epoch)
@@ -83,11 +84,6 @@ func (s *Server) commitLoop() {
 			n = 0
 		}
 	}
-}
-
-// 1. 不断产生事务 2. 不断提交事务
-func (s *Server) run() {
-
 }
 
 func makeNetwork(n int) []*Server {

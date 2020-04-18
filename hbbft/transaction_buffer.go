@@ -11,7 +11,7 @@ type transactionBuffer struct {
 
 func newTransactionBuffer() *transactionBuffer {
 	return &transactionBuffer{
-		data: make([]Transaction, 0, 1024),
+		data: make([]Transaction, 0, 1024*1024),
 	}
 }
 

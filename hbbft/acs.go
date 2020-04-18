@@ -29,7 +29,7 @@ type ACS struct {
 
 func NewACS(cfg Config) *ACS {
 	if cfg.F == 0 {
-		cfg.F = (cfg.N - 1) / 3
+		cfg.F = (cfg.N) / 4
 	}
 	acs := &ACS{
 		Config:       cfg,

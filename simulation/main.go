@@ -7,12 +7,6 @@ import (
 	"../hbbft"
 )
 
-const (
-	// 	lenNodes  = 4
-	// 	batchSize = 500
-	numCores = 4
-)
-
 type message struct {
 	from    uint64
 	payload hbbft.Message
@@ -20,22 +14,22 @@ type message struct {
 
 var (
 	lenNodes  = 4
-	batchSize = 500
+	batchSize = 100
 	messages  = make(chan message, 1024*1024)
 )
 
 func Init() {
-	flag.IntVar(&lenNodes, "lenNodes", 4, "number of nodes")
-	flag.IntVar(&batchSize, "batchSize", 500, "number of transactions at a time")
+	flag.IntVar(&lenNodes, "lenNodes", lenNodes, "number of nodes")
+	flag.IntVar(&batchSize, "batchSize", batchSize, "number of transactions at a time")
 }
 
 func main() {
 	Init()
 	flag.Parse()
 
-	fmt.Printf("lenNodes = %v batchSize = %v\n", lenNodes, batchSize)
-
 	nodes := makeNetwork(lenNodes)
+
+	fmt.Printf("lenNodes = %v, faultyNodes = %v, batchSize = %v\n", lenNodes, lenNodes/4, batchSize)
 
 	for _, node := range nodes {
 		go node.addTransactionLoop()
