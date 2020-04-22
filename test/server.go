@@ -58,17 +58,34 @@ func (s *Server) commitLoop() {
 		select {
 		case <-timer.C:
 			out := s.hb.Outputs()
-			// var epoch uint64
-			for _, txx := range out {
+			epochList := make([]uint64, 0)
+			for e, txx := range out {
 				for _, tx := range txx {
 					hash := tx.Hash()
 					s.lock.Lock()
 					n++
 					delete(s.transactionMap, string(hash))
-					// epoch = e
 					s.lock.Unlock()
 				}
+				epochList = append(epochList, e)
 			}
+
+			var minEpoch uint64
+			var maxEpoch uint64
+			for i, e := range epochList {
+				if i == 0 {
+					minEpoch = e
+					maxEpoch = e
+				}
+				if e <= minEpoch {
+					minEpoch = e
+				}
+				if e > maxEpoch {
+					maxEpoch = e
+				}
+			}
+			epochInterval := maxEpoch - minEpoch
+
 			s.totalCommit += n
 			delta := time.Since(s.start)
 			if s.id == 1 {
@@ -77,7 +94,9 @@ func (s *Server) commitLoop() {
 				// fmt.Printf("server %d\n", s.id)
 				fmt.Printf("commited %d transactions over %v\n", s.totalCommit, delta)
 				fmt.Printf("throughput %d TX/s\n", s.totalCommit/int(delta.Seconds()))
-				// fmt.Printf("epoch %d\n", epoch)
+				fmt.Printf("epoch %d - %d\n", minEpoch, maxEpoch)
+				// fmt.Printf("epochInterval %d\n", epochInterval)
+				fmt.Printf("latency %d ms\n", 5000/epochInterval)
 				fmt.Println("*************************************************")
 				fmt.Println("")
 			}
